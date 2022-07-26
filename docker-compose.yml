@@ -1,0 +1,16 @@
+version: "3.5"
+services:
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    hostname: rabbit-broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./docker/rabbit-mq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./docker/rabbit-mq/rabbitmq.conf:/etc/rabbitmq/conf.d/rabbitmq.conf
+  orders-db:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+    #
