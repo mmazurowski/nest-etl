@@ -6,7 +6,7 @@
   "root": "apps/products",
   "compilerOptions": {
     "webpack": true,
-    "tsConfigPath": "apps/orders/tsconfig.app.json"
+    "tsConfigPath": "apps/products/tsconfig.app.json"
   },
   "projects": {
     "products": {

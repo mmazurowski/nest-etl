@@ -7,12 +7,25 @@ import { ORDERS_PROCESSING_FEATURE } from '../feature';
 export class OrdersExtractScheduler {
   private readonly logger = new Logger(ORDERS_PROCESSING_FEATURE);
 
+  private isExecuting = false;
+
   constructor(private readonly ordersService: AbstractOrdersService) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async execute(): Promise<void> {
     this.logger.log('Orders extraction scheduled.');
 
-    return this.ordersService.process();
+    if (this.isExecuting) {
+      this.logger.log(
+        'Skipping cron invocation. Previous invocation still running',
+      );
+      return;
+    }
+
+    this.isExecuting = true;
+
+    await this.ordersService.process();
+
+    this.isExecuting = false;
   }
 }

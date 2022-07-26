@@ -1,10 +1,12 @@
 import { AbstractOrdersService } from './interfaces/abstract-orders.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ORDERS_PROCESSING_FEATURE } from '../feature';
 import { HttpService } from '@nestjs/axios';
 import { Order } from '../domain/order.type';
-import { EMPTY, expand } from 'rxjs';
 import { AbstractOrdersRepository } from './interfaces/abstract-orders.repository';
+import { ClientProxy } from '@nestjs/microservices';
+import { productCreatedContract } from '../../../../../contracts/product_created.contract';
+import { reduceToUnique } from '../shared/reduce-to-unique-products';
 
 @Injectable()
 export class ExtractOrdersService extends AbstractOrdersService {
@@ -13,6 +15,7 @@ export class ExtractOrdersService extends AbstractOrdersService {
   constructor(
     private readonly httpService: HttpService,
     private readonly orderRepository: AbstractOrdersRepository,
+    @Inject('ORDERS_SERVICE') private client: ClientProxy,
   ) {
     super();
   }
@@ -20,56 +23,71 @@ export class ExtractOrdersService extends AbstractOrdersService {
   public async process(): Promise<void> {
     this.logger.log('Orders service processing.');
 
-    await this.extractOrders();
-  }
+    const BATCH_SIZE = 100;
+    let hasNextPage = true;
 
-  private async extractOrders(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const BATCH_SIZE = 1;
+    // TODO: Change to 1
+    let page = 1;
+    const request = {
+      url: 'https://recruitment-api.dev.flipfit.io/orders',
+      method: 'GET',
+      headers: {
+        accepts: 'application/json',
+      },
+      params: {
+        _limit: BATCH_SIZE,
+        _page: page,
+      },
+    };
 
-      // TODO: Change to 1
-      let page = 20000;
-      const request = {
-        url: 'https://recruitment-api.dev.flipfit.io/orders',
-        // url: 'https://my-json-server.typicode.com/typicode/demo/posts',
-        method: 'GET',
-        headers: {
-          accepts: 'application/json',
-        },
-        params: {
-          _limit: BATCH_SIZE,
-          _page: page,
-        },
-      };
+    do {
+      const res = await this.httpService.axiosRef.request<Order[]>({
+        ...request,
+        params: { ...request.params, _page: page },
+      });
 
-      this.httpService
-        .request<Order[]>({ ...request })
-        .pipe(
-          expand((response) => {
-            const hasNextPage =
-              response.status <= 400 &&
-              response.status >= 200 &&
-              response.data.length > 0;
+      const repoPromises = res.data.map(async (order) => {
+        const uniqueOrder = {
+          ...order,
+          items: reduceToUnique(order.items),
+        };
 
-            page = page + 1;
+        const shouldPublish = await this.orderRepository.save(uniqueOrder);
 
-            return hasNextPage
-              ? this.httpService.request<Order[]>({
-                  ...request,
-                  params: { ...request.params, _page: page },
-                })
-              : EMPTY;
-          }),
-        )
-        .subscribe(async (result) => {
-          await Promise.all(
-            result.data.map(async (order) => this.orderRepository.save(order)),
+        if (shouldPublish) {
+          const promises = order.items.map(
+            ({ product: { id, name, price }, quantity }) =>
+              this.client
+                .emit(
+                  productCreatedContract.KEY,
+                  productCreatedContract.eventFactory(
+                    name,
+                    id,
+                    Number(price) * 100,
+                    quantity,
+                    order.date,
+                  ),
+                )
+                .toPromise(),
           );
-          result.data.map((el) => this.logger.log(el.customer.name));
-        })
-        .add(() => {
-          resolve();
-        });
-    });
+
+          await Promise.all(promises);
+        }
+      });
+
+      if (repoPromises.length === 0) {
+        break;
+      }
+
+      await Promise.all(repoPromises);
+
+      this.logger.log(`Page number: [${page}] processed.`);
+
+      hasNextPage =
+        res.status <= 400 && res.status >= 200 && res.data.length > 0;
+      page = page + 1;
+    } while (hasNextPage);
+
+    this.logger.log('All orders extracted');
   }
 }

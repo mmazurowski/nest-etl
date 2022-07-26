@@ -6,9 +6,38 @@ import { ExtractOrdersService } from './application/extract-orders.service';
 import { HttpModule } from '@nestjs/axios';
 import { AbstractOrdersRepository } from './application/interfaces/abstract-orders.repository';
 import { DynamodbOrdersRepository } from './infrastructure/dynamodb-orders.repository';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), HttpModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
+    HttpModule,
+    ClientsModule.registerAsync([
+      {
+        name: 'ORDERS_SERVICE',
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => {
+          const user = config.get('RABBITMQ_USER');
+          const password = config.get('RABBITMQ_PASSWORD');
+          const host = config.get('RABBITMQ_HOST');
+          const queue = config.get('PRODUCTS_SVC_INCOMING_QUEUE');
+
+          return {
+            transport: Transport.RMQ,
+            options: {
+              urls: [`amqp://${user}:${password}@${host}/`],
+              queue,
+              queueOptions: {
+                durable: true,
+              },
+            },
+          };
+        },
+      },
+    ]),
+  ],
   controllers: [],
   providers: [
     OrdersExtractScheduler,

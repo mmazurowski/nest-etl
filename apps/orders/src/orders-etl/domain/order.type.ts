@@ -4,7 +4,7 @@ type Product = {
   price: string;
 };
 
-type Item = {
+export type Item = {
   product: Product;
   quantity: number;
 };

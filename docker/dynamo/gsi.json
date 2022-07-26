@@ -1,0 +1,50 @@
+[
+  {
+    "IndexName": "GSI1PK-amountSold-index",
+    "KeySchema": [
+      {
+        "AttributeName": "GSI1PK",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "amountSold",
+        "KeyType": "RANGE"
+      }
+    ],
+    "Projection": {
+      "ProjectionType": "ALL"
+    }
+  },
+  {
+    "IndexName": "GSI3PK-amountSold-index",
+    "KeySchema": [
+      {
+        "AttributeName": "GSI3PK",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "amountSold",
+        "KeyType": "RANGE"
+      }
+    ],
+    "Projection": {
+      "ProjectionType": "ALL"
+    }
+  },
+  {
+    "IndexName": "GSI2PK-totalValue-index",
+    "KeySchema": [
+      {
+        "AttributeName": "GSI2PK",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "totalValue",
+        "KeyType": "RANGE"
+      }
+    ],
+    "Projection": {
+      "ProjectionType": "ALL"
+    }
+  }
+]
