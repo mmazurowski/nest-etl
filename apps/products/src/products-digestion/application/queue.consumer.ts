@@ -1,6 +1,6 @@
 import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
-import { ProductSoldEvent } from '../../../../../contracts/product_created.contract';
+import { ProductSoldEvent } from '../../../../../contracts/product-sold.contract';
 import { DynamodbProductRepository } from '../infrastructure/dynamodb-product.repository';
 import { backOff } from 'exponential-backoff';
 import { Logger } from '@nestjs/common';

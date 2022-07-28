@@ -1,9 +1,9 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern } from '@nestjs/microservices';
 import {
-  productCreatedContract,
+  productSoldContract,
   ProductSoldEvent,
-} from '../../../../../contracts/product_created.contract';
+} from '../../../../../contracts/product-sold.contract';
 import { DynamodbProductRepository } from '../infrastructure/dynamodb-product.repository';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -18,7 +18,7 @@ export class EventsController {
     @InjectQueue('products') private productsQueue: Queue,
   ) {}
 
-  @EventPattern(productCreatedContract.KEY)
+  @EventPattern(productSoldContract.KEY)
   async productCounterOfAllTime(data: ProductSoldEvent) {
     this.logger.log(`Event with ID: [${data.eventId}] requested to import.`);
 

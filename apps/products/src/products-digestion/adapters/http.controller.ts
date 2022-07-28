@@ -41,7 +41,9 @@ export class HttpController {
     return { success: true, data };
   }
 
-  @Get('/product/most-frequent-yesterday')
+  // Given the dataset could not have result for actual yesterday,
+  // I added query param to the endpoint for testing purposes.
+  @Get('/product/most-frequent-for-date')
   @HttpCode(200)
   public async mostOftenBoughtYesterday(
     @Query('day') dayFor,

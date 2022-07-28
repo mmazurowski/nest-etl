@@ -98,6 +98,7 @@ services:
       ORDERS_SVC_OUTGOING_QUEUE: "products"
       PRODUCTS_SVC_INCOMING_QUEUE: "products_ingest"
       DYNAMODB_ORDERS_ENDPOINT: "http://orders-db:8000"
+      ORDERS_ENDPOINT: "https://recruitment-api.dev.flipfit.io/orders"
     build:
       context: .
       dockerfile: docker/orders/Dockerfile

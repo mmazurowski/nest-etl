@@ -27,4 +27,4 @@ const eventFactory = (
   orderDate: orderDate,
 });
 
-export const productCreatedContract = { KEY, eventFactory };
+export const productSoldContract = { KEY, eventFactory };

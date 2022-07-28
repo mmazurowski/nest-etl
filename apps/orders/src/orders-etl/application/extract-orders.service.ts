@@ -5,14 +5,16 @@ import { HttpService } from '@nestjs/axios';
 import { Order } from '../domain/order.type';
 import { AbstractOrdersRepository } from './interfaces/abstract-orders.repository';
 import { ClientProxy } from '@nestjs/microservices';
-import { productCreatedContract } from '../../../../../contracts/product_created.contract';
+import { productSoldContract } from '../../../../../contracts/product-sold.contract';
 import { reduceToUnique } from '../shared/reduce-to-unique-products';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ExtractOrdersService extends AbstractOrdersService {
   private readonly logger = new Logger(ORDERS_PROCESSING_FEATURE);
 
   constructor(
+    private readonly config: ConfigService,
     private readonly httpService: HttpService,
     private readonly orderRepository: AbstractOrdersRepository,
     @Inject('ORDERS_SERVICE') private client: ClientProxy,
@@ -21,14 +23,15 @@ export class ExtractOrdersService extends AbstractOrdersService {
   }
 
   public async process(): Promise<void> {
-    this.logger.log('Orders service processing.');
+    this.logger.log('Orders service processing started.');
+    const endpoint = this.config.get('ORDERS_ENDPOINT');
 
     const BATCH_SIZE = 100;
     let hasNextPage = true;
 
     let page = 1;
     const request = {
-      url: 'https://recruitment-api.dev.flipfit.io/orders',
+      url: endpoint,
       method: 'GET',
       headers: {
         accepts: 'application/json',
@@ -58,8 +61,8 @@ export class ExtractOrdersService extends AbstractOrdersService {
             ({ product: { id, name, price }, quantity }) =>
               this.client
                 .emit(
-                  productCreatedContract.KEY,
-                  productCreatedContract.eventFactory(
+                  productSoldContract.KEY,
+                  productSoldContract.eventFactory(
                     name,
                     id,
                     Number(price) * 100,
