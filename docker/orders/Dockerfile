@@ -7,7 +7,7 @@ WORKDIR /home/app
 RUN npm install \
     && npm run build:orders
 
-FROM node:14-alpine as Executor
+FROM node:16-alpine as Executor
 
 WORKDIR /home/app
 

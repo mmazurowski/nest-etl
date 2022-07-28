@@ -7,36 +7,27 @@ import {
   TransactWriteItem,
   TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ORDERS_PROCESSING_FEATURE } from '../feature';
-import { Agent } from 'http';
-import { NodeHttpHandler } from '@aws-sdk/node-http-handler';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class DynamodbOrdersRepository extends AbstractOrdersRepository {
+  constructor(
+    @Inject('DYNAMODB_CLIENT') private readonly client: DynamoDBClient,
+  ) {
+    super();
+  }
   private static TABLE_NAME = 'orders';
 
   private readonly logger = new Logger(ORDERS_PROCESSING_FEATURE);
 
   public async save(order: Order): Promise<boolean> {
-    const client = new DynamoDBClient({
-      credentials: {
-        secretAccessKey: 'dummy-data',
-        accessKeyId: 'dummy-data',
-      },
-      endpoint: 'http://orders-db:8000',
-      requestHandler: new NodeHttpHandler({
-        httpAgent: new Agent({
-          keepAlive: true,
-        }),
-      }),
-    });
-
     const items: TransactWriteItem[] = order.items.map((item) => ({
       Put: {
         TableName: DynamodbOrdersRepository.TABLE_NAME,
         Item: {
-          PK: { S: `ORDER#${order.id}ID#${item.product.id}` },
+          PK: { S: `ORDER#${order.id}ID#${item.product.id}#ITEMID#${v4()}` },
           productName: { S: item.product.name },
           productPrice: { S: item.product.price },
           quantity: { N: item.quantity.toString() },
@@ -63,7 +54,7 @@ export class DynamodbOrdersRepository extends AbstractOrdersRepository {
     });
 
     try {
-      await client.send(command);
+      await this.client.send(command);
 
       return true;
     } catch (e) {

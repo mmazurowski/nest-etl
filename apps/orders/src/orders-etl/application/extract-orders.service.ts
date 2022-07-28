@@ -26,7 +26,6 @@ export class ExtractOrdersService extends AbstractOrdersService {
     const BATCH_SIZE = 100;
     let hasNextPage = true;
 
-    // TODO: Change to 1
     let page = 1;
     const request = {
       url: 'https://recruitment-api.dev.flipfit.io/orders',

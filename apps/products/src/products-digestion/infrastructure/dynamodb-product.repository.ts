@@ -5,10 +5,8 @@ import {
   TransactionCanceledException,
   TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Product } from '../domain/product.type';
-import { NodeHttpHandler } from '@aws-sdk/node-http-handler';
-import { Agent } from 'http';
 
 type MostProfitableRecord = {
   id: string;
@@ -26,18 +24,9 @@ type MostBoughtRecords = {
 export class DynamodbProductRepository {
   private static TABLE_NAME = 'products';
 
-  private readonly client = new DynamoDBClient({
-    credentials: {
-      secretAccessKey: 'dummy-data',
-      accessKeyId: 'dummy-data',
-    },
-    endpoint: 'http://products-db:8000',
-    requestHandler: new NodeHttpHandler({
-      httpAgent: new Agent({
-        keepAlive: true,
-      }),
-    }),
-  });
+  constructor(
+    @Inject('DYNAMODB_CLIENT') private readonly client: DynamoDBClient,
+  ) {}
 
   public async save(product: Product): Promise<void> {
     const command = new TransactWriteItemsCommand({

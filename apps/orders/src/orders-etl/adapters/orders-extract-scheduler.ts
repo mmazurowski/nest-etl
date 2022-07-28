@@ -11,6 +11,7 @@ export class OrdersExtractScheduler {
 
   constructor(private readonly ordersService: AbstractOrdersService) {}
 
+  // For the purpose of demonstration fires more frequently than it would in real life.
   @Cron(CronExpression.EVERY_MINUTE)
   async execute(): Promise<void> {
     this.logger.log('Orders extraction scheduled.');

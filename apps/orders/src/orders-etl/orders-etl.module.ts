@@ -8,6 +8,9 @@ import { AbstractOrdersRepository } from './application/interfaces/abstract-orde
 import { DynamodbOrdersRepository } from './infrastructure/dynamodb-orders.repository';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { NodeHttpHandler } from '@aws-sdk/node-http-handler';
+import { Agent } from 'http';
 
 @Module({
   imports: [
@@ -48,6 +51,30 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     {
       provide: AbstractOrdersRepository,
       useClass: DynamodbOrdersRepository,
+    },
+    {
+      inject: [ConfigService],
+      provide: 'DYNAMODB_CLIENT',
+      useFactory: (config: ConfigService) => {
+        // Local version of DynamoDB requires a bit different config than production.
+        // This could be in Factory depending on actual environment
+        const endpoint = config.get('DYNAMODB_ORDERS_ENDPOINT');
+
+        console.log(endpoint);
+
+        return new DynamoDBClient({
+          credentials: {
+            secretAccessKey: 'dummy-data',
+            accessKeyId: 'dummy-data',
+          },
+          endpoint,
+          requestHandler: new NodeHttpHandler({
+            httpAgent: new Agent({
+              keepAlive: true,
+            }),
+          }),
+        });
+      },
     },
   ],
 })

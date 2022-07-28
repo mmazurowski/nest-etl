@@ -75,7 +75,9 @@ services:
       RABBITMQ_USER: "guest"
       RABBITMQ_PASSWORD: "guest"
       RABBITMQ_HOST: "rabbitmq:5672"
-      AWS_REGION: 'eu-west-1'
+      AWS_REGION: "eu-west-1"
+      DYNAMODB_PRODUCTS_ENDPOINT: "http://products-db:8000"
+      PRODUCTS_SVC_INCOMING_QUEUE: "products_ingest"
     build:
       context: .
       dockerfile: docker/products/Dockerfile
@@ -92,9 +94,10 @@ services:
       RABBITMQ_USER: "guest"
       RABBITMQ_PASSWORD: "guest"
       RABBITMQ_HOST: "rabbitmq:5672"
-      AWS_REGION: 'eu-west-1'
+      AWS_REGION: "eu-west-1"
       ORDERS_SVC_OUTGOING_QUEUE: "products"
       PRODUCTS_SVC_INCOMING_QUEUE: "products_ingest"
+      DYNAMODB_ORDERS_ENDPOINT: "http://orders-db:8000"
     build:
       context: .
       dockerfile: docker/orders/Dockerfile
