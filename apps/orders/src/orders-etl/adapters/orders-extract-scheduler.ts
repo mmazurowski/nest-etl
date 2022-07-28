@@ -14,18 +14,20 @@ export class OrdersExtractScheduler {
   // For the purpose of demonstration fires more frequently than it would in real life.
   @Cron(CronExpression.EVERY_MINUTE)
   async execute(): Promise<void> {
-    this.logger.log('Orders extraction scheduled.');
-
     if (this.isExecuting) {
-      this.logger.log(
-        'Skipping cron invocation. Previous invocation still running',
-      );
+      this.logger.log('Skipping orders extraction. Previous job still running');
       return;
     }
 
+    this.logger.log('Orders extraction scheduled.');
+
     this.isExecuting = true;
 
-    await this.ordersService.process();
+    try {
+      await this.ordersService.process();
+    } catch (e) {
+      this.logger.error(e);
+    }
 
     this.isExecuting = false;
   }
